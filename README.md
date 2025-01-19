@@ -22,6 +22,8 @@ The project utilizes the following approach:
 4. Training and Validation: Using 8 image sets for training (235 images total, with 59 for validation)
 5. Testing: Evaluation of the model using 2 separate image sets (30 images)
 
+![UNet](https://raw.githubusercontent.com/WanLinChen/Urethra-segmentation-of-pelvic-floor-ultrasound-images-based-on-deep-learning/master/UNet.png)
+
 ## Results
 
 The current model demonstrates the ability to roughly locate the urethra in most images. However, there are limitations in terms of shape and size accuracy compared to manual annotations. The project identifies areas for potential improvement, including:
