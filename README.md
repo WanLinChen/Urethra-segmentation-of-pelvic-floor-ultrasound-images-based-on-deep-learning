@@ -1,37 +1,172 @@
-# Urethra Segmentation in Pelvic Floor Ultrasound Images
+# Urethra Segmentation of Pelvic Floor Ultrasound Images Based on Deep Learning
 
-## Project Overview
+> Academic exchange project — National Tsing Hua University × Peking University, Summer 2022  
+> Advisor: Prof. Luo Jiajia, Department of Biomedical Engineering, Peking University
 
-This project aims to develop an automated system for segmenting the urethra in female pelvic floor ultrasound images using deep learning techniques. The goal is to assist gynecologists in diagnosing pelvic organ prolapse conditions more accurately and efficiently.
+---
 
-## Motivation
+## 📌 Background
 
-Pelvic floor dysfunction (PFD) affects approximately 1 in 10 women, significantly impacting their quality of life. Accurate diagnosis often requires analyzing ultrasound images of the pelvic region. By automating the segmentation of the urethra, this project seeks to:
+**Pelvic Floor Dysfunction (PFD)** — encompassing pelvic organ prolapse and stress urinary incontinence — affects approximately 1 in 10 women and carries enormous medical costs (USD ~$1 billion/year in the US alone). Clinical diagnosis often relies on observing urethral movement under ultrasound during resting (Rest) and Valsalva maneuvers, but precise automated tools for this are lacking.
 
-1. Reduce the manual workload for medical professionals
-2. Improve the precision of pelvic organ prolapse assessments
-3. Potentially lower treatment costs associated with PFD
+This project builds an **automated urethra segmentation pipeline** for 2D pelvic floor ultrasound images using a **U-Net** deep learning architecture, with the goal of helping clinicians more accurately assess anterior pelvic organ prolapse.
 
-## Methodology
+---
 
-The project utilizes the following approach:
+## 🗂️ Project Structure
 
-1. Data Collection: 10 sets of female pelvic ultrasound images from Peking University People's Hospital
-2. Data Annotation: Manual labeling of the urethra in each image frame using 3D Slicer software
-3. Model Architecture: Implementation of a U-Net deep learning network for image segmentation
-4. Training and Validation: Using 8 image sets for training (235 images total, with 59 for validation)
-5. Testing: Evaluation of the model using 2 separate image sets (30 images)
+```
+├── data/
+│   ├── pelvic_train/          # Training data (8 patient cases, 235 frames)
+│   │   └── <case_id>/
+│   │       ├── images/        # Raw ultrasound frames (.png)
+│   │       └── masks/         # Binary segmentation masks (.png)
+│   └── pelvic_test/           # Test data (2 patient cases, 30 frames)
+│       └── <case_id>/
+│           └── images/
+├── unet_model.py              # U-Net model definition
+├── train.py                   # Data loading, preprocessing, and training
+├── predict.py                 # Run inference and visualize results
+└── README.md
+```
 
-![UNet](https://raw.githubusercontent.com/WanLinChen/Urethra-segmentation-of-pelvic-floor-ultrasound-images-based-on-deep-learning/master/UNet.png)
+---
 
-## Results
+## 🧠 Model Architecture — U-Net
 
-The current model demonstrates the ability to roughly locate the urethra in most images. However, there are limitations in terms of shape and size accuracy compared to manual annotations. The project identifies areas for potential improvement, including:
+U-Net is a fully convolutional network originally proposed for biomedical image segmentation. It consists of two symmetric paths:
 
-1. Increasing the training dataset size
-2. Exploring alternative network architectures
-3. Enhancing the model's generalization capabilities
+- **Encoder (Contracting Path):** Successive Conv2D + ReLU + MaxPooling blocks progressively extract features while reducing spatial dimensions. Filter counts: 16 → 32 → 64 → 128 → 256.
+- **Bottleneck:** Deepest feature representation (256 channels).
+- **Decoder (Expansive Path):** Transposed convolutions upsample the feature maps back to the original resolution. Skip connections from the encoder are concatenated at each level to preserve spatial detail.
+- **Output:** A single-channel sigmoid activation map — each pixel receives a probability of belonging to the urethra.
 
+```
+Input (800×640×3)
+    │
+    ├─[Encoder]─────────────────────────────────────────────────────┐
+    │  C1 (16)  → P1 (400×320)                                      │ skip connections
+    │  C2 (32)  → P2 (200×160)                                      │
+    │  C3 (64)  → P3 (100×80)                                       │
+    │  C4 (128) → P4 (50×40)                                        │
+    │  C5 (256) [bottleneck]                                         │
+    │                                                                │
+    ├─[Decoder]──────────────────────────────────────────────────────┘
+    │  U6 (128) ← concat(C4)
+    │  U7 (64)  ← concat(C3)
+    │  U8 (32)  ← concat(C2)
+    │  U9 (16)  ← concat(C1)
+    │
+Output (800×640×1, sigmoid)
+```
+
+**Training config:**
+- Optimizer: Adam
+- Loss: Binary Cross-Entropy
+- Metric: Accuracy
+- Input size: 800 × 640 × 3
+- Dropout: 0.1–0.3 (regularization)
+
+---
+
+## 📊 Dataset
+
+| Split      | Cases | Frames |
+|------------|-------|--------|
+| Training   | 6     | 176    |
+| Validation | 2     | 59     |
+| Test       | 2     | 30     |
+| **Total**  | **10**| **265**|
+
+- Source: Peking University People's Hospital
+- Modality: 2D B-mode transverse pelvic ultrasound (Mindray DC-3X / DB-2U)
+- Annotation: Manual urethra labeling performed with **3D Slicer**, exported as binary label maps (masks)
+- Images converted from `.dcm` → `.png`; resized from 1620×910 / 1920×910 → **800×640**
+
+---
+
+## ⚙️ Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/WanLinChen/Urethra-segmentation-of-pelvic-floor-ultrasound-images-based-on-deep-learning.git
+cd Urethra-segmentation-of-pelvic-floor-ultrasound-images-based-on-deep-learning
+
+# Install dependencies
+pip install tensorflow numpy scikit-image matplotlib tqdm Pillow opencv-python
+```
+
+**Tested with:** Python 3.8, TensorFlow 2.x
+
+---
+
+## 🚀 Usage
+
+### 1. Prepare Data
+Organize your data under `data/pelvic_train/` and `data/pelvic_test/` following the structure above. Each case folder should contain an `images/` subfolder and (for training) a `masks/` subfolder.
+
+### 2. Train
+```bash
+python train.py
+```
+This loads all training images and masks, resizes them to 800×640, trains the U-Net for the configured number of epochs, and saves the best model weights.
+
+### 3. Predict & Visualize
+```bash
+python predict.py
+```
+Runs inference on the test set and generates side-by-side comparison plots (original image | predicted mask | ground truth mask).
+
+---
+
+## 📈 Results
+
+The model successfully locates the urethra in most images across all three splits. Qualitative examples below show the original ultrasound frame (with the urethra circled in red), the model's predicted mask, and the manually annotated ground truth mask.
+
+| Set        | Observation |
+|------------|-------------|
+| Training   | Strong localization; shape fidelity improving with training data exposure |
+| Validation | Good position detection; occasional shape/size mismatch |
+| Test       | Correct region identified; some over-segmentation of adjacent structures |
+
+**Known limitations:**
+- Small dataset (265 frames total) limits generalization
+- Some false positive regions segmented in test images (low-contrast areas)
+- Shape accuracy on test set lags behind training/validation sets
+
+**Potential improvements:**
+- Data augmentation (flipping, rotation, elastic deformation)
+- Larger and more diverse dataset
+- Experimenting with UNet++ or ResNet-based encoders
+
+---
+
+## 🔧 Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| TensorFlow 2.x | Model building & training |
+| NumPy | Array operations |
+| scikit-image | Image I/O and resizing |
+| Pillow | Mask loading |
+| OpenCV | Image preprocessing |
+| Matplotlib | Result visualization |
+| tqdm | Progress bars |
+
+---
+
+## 📄 Reference
+
+- Ronneberger O., Fischer P., Brox T. (2015). *U-Net: Convolutional Networks for Biomedical Image Segmentation.* [arXiv:1505.04597](https://arxiv.org/pdf/1505.04597.pdf)
+- 3D Slicer: https://slicer.readthedocs.io/en/latest/user_guide/about.html
+
+---
+
+## 👩‍💻 Author
+
+**陳宛琳 (Wan-Lin Chen)**  
+Department of Engineering and System Science, National Tsing Hua University  
+2022 Cross-Strait Summer Academic Exchange Program
 ## Acknowledgements
 
 This project was conducted as part of a cross-strait summer academic exchange program between National Tsing Hua University and Peking University. Special thanks to Professor Jiajia Luo from the Department of Biomedical Engineering at Peking University for guidance and supervision.
