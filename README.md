@@ -136,7 +136,7 @@ The model successfully locates the urethra in most images across all three split
 - 3D Slicer: https://slicer.readthedocs.io/en/latest/user_guide/about.html
 
 
-## 👩‍💻 Author
+## Author
 
 **陳宛琳 (Wan-Lin Chen)**  
 Department of Engineering and System Science, National Tsing Hua University  
