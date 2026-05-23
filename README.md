@@ -3,17 +3,15 @@
 > Academic exchange project — National Tsing Hua University × Peking University, Summer 2022  
 > Advisor: Prof. Luo Jiajia, Department of Biomedical Engineering, Peking University
 
----
 
-## 📌 Background
+## Background
 
 **Pelvic Floor Dysfunction (PFD)** — encompassing pelvic organ prolapse and stress urinary incontinence — affects approximately 1 in 10 women and carries enormous medical costs (USD ~$1 billion/year in the US alone). Clinical diagnosis often relies on observing urethral movement under ultrasound during resting (Rest) and Valsalva maneuvers, but precise automated tools for this are lacking.
 
 This project builds an **automated urethra segmentation pipeline** for 2D pelvic floor ultrasound images using a **U-Net** deep learning architecture, with the goal of helping clinicians more accurately assess anterior pelvic organ prolapse.
 
----
 
-## 🗂️ Project Structure
+## Project Structure
 
 ```
 ├── data/
@@ -30,9 +28,8 @@ This project builds an **automated urethra segmentation pipeline** for 2D pelvic
 └── README.md
 ```
 
----
 
-## 🧠 Model Architecture — U-Net
+## Model Architecture — U-Net
 
 U-Net is a fully convolutional network originally proposed for biomedical image segmentation. It consists of two symmetric paths:
 
@@ -41,24 +38,8 @@ U-Net is a fully convolutional network originally proposed for biomedical image 
 - **Decoder (Expansive Path):** Transposed convolutions upsample the feature maps back to the original resolution. Skip connections from the encoder are concatenated at each level to preserve spatial detail.
 - **Output:** A single-channel sigmoid activation map — each pixel receives a probability of belonging to the urethra.
 
-```
-Input (800×640×3)
-    │
-    ├─[Encoder]─────────────────────────────────────────────────────┐
-    │  C1 (16)  → P1 (400×320)                                      │ skip connections
-    │  C2 (32)  → P2 (200×160)                                      │
-    │  C3 (64)  → P3 (100×80)                                       │
-    │  C4 (128) → P4 (50×40)                                        │
-    │  C5 (256) [bottleneck]                                         │
-    │                                                                │
-    ├─[Decoder]──────────────────────────────────────────────────────┘
-    │  U6 (128) ← concat(C4)
-    │  U7 (64)  ← concat(C3)
-    │  U8 (32)  ← concat(C2)
-    │  U9 (16)  ← concat(C1)
-    │
-Output (800×640×1, sigmoid)
-```
+<img width="1693" height="929" alt="image" src="https://github.com/user-attachments/assets/7c87da11-f966-45d1-a3ff-8ac4534ffae4" />
+
 
 **Training config:**
 - Optimizer: Adam
@@ -67,9 +48,8 @@ Output (800×640×1, sigmoid)
 - Input size: 800 × 640 × 3
 - Dropout: 0.1–0.3 (regularization)
 
----
 
-## 📊 Dataset
+## Dataset
 
 | Split      | Cases | Frames |
 |------------|-------|--------|
@@ -83,9 +63,8 @@ Output (800×640×1, sigmoid)
 - Annotation: Manual urethra labeling performed with **3D Slicer**, exported as binary label maps (masks)
 - Images converted from `.dcm` → `.png`; resized from 1620×910 / 1920×910 → **800×640**
 
----
 
-## ⚙️ Setup
+## Setup
 
 ```bash
 # Clone the repository
@@ -98,9 +77,8 @@ pip install tensorflow numpy scikit-image matplotlib tqdm Pillow opencv-python
 
 **Tested with:** Python 3.8, TensorFlow 2.x
 
----
 
-## 🚀 Usage
+## Usage
 
 ### 1. Prepare Data
 Organize your data under `data/pelvic_train/` and `data/pelvic_test/` following the structure above. Each case folder should contain an `images/` subfolder and (for training) a `masks/` subfolder.
@@ -117,9 +95,8 @@ python predict.py
 ```
 Runs inference on the test set and generates side-by-side comparison plots (original image | predicted mask | ground truth mask).
 
----
 
-## 📈 Results
+## Results
 
 The model successfully locates the urethra in most images across all three splits. Qualitative examples below show the original ultrasound frame (with the urethra circled in red), the model's predicted mask, and the manually annotated ground truth mask.
 
@@ -139,9 +116,8 @@ The model successfully locates the urethra in most images across all three split
 - Larger and more diverse dataset
 - Experimenting with UNet++ or ResNet-based encoders
 
----
 
-## 🔧 Dependencies
+## Dependencies
 
 | Package | Purpose |
 |---------|---------|
@@ -153,14 +129,12 @@ The model successfully locates the urethra in most images across all three split
 | Matplotlib | Result visualization |
 | tqdm | Progress bars |
 
----
 
-## 📄 Reference
+## Reference
 
 - Ronneberger O., Fischer P., Brox T. (2015). *U-Net: Convolutional Networks for Biomedical Image Segmentation.* [arXiv:1505.04597](https://arxiv.org/pdf/1505.04597.pdf)
 - 3D Slicer: https://slicer.readthedocs.io/en/latest/user_guide/about.html
 
----
 
 ## 👩‍💻 Author
 
